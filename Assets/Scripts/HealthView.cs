@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -5,13 +6,20 @@ using UnityEngine.UI;
 public class HealthView : MonoBehaviour
 {
     [SerializeField] private Health _health;
+    [SerializeField] private int _changeRate;
+    [SerializeField] private float _changeTime;
 
     private Slider _healthSlider;
+    private WaitForSeconds _changeDelay;
+
+    private Coroutine _changeCoroutine;
 
     private void Awake()
     {
         _healthSlider = GetComponent<Slider>();
         _healthSlider.maxValue = _health.MaxAmount;
+
+        _changeDelay = new WaitForSeconds(_changeTime);
     }
 
     private void OnEnable()
@@ -24,8 +32,23 @@ public class HealthView : MonoBehaviour
         _health.Changed.RemoveListener(OnChanged);
     }
 
-    private void OnChanged(int health)
+    private void OnChanged(int value)
     {
-        _healthSlider.value = health;
+        if (_changeCoroutine != null)
+        {
+            StopCoroutine(_changeCoroutine);
+        }
+
+        _changeCoroutine = StartCoroutine(MoveValue(value));
+    }
+
+    private IEnumerator MoveValue(int value)
+    {
+        while (_healthSlider.value != value)
+        {
+            _healthSlider.value = Mathf.MoveTowards(_healthSlider.value, value, _changeRate);
+
+            yield return _changeDelay;
+        }
     }
 }
